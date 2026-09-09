@@ -41,6 +41,12 @@ Choose open ground, canyon mouth, or ridge + screen before launch. The flank tog
 
 Plain HTML, CSS, and JavaScript with no external runtime dependencies. Canvas draws a fixed angled projection of a heightmap with modeled elevation, movement limits, and line-of-sight checks; this is a software-rendered prototype, not a full 3D engine. Infantry squads count as one mechanical unit. Tanks gain range and splash damage in siege mode, lose movement, and have a minimum firing range.
 
+## Build 03 — outpost visibility
+
+The standing outpost provides 12 map units of sight, shared with the defending force. Nearby enemies remain visible after the last local defender dies; terrain still blocks sight. Destroying the outpost removes its sight. The header identifies the update as BUILD 03.
+
+Visibility checks cover sight with no surviving units, the sight boundary, terrain occlusion, loss of building sight on destruction, and surviving squad vision.
+
 ## Build 02 — targeting and collision
 
 - Tanks automatically prioritize hittable enemy armor, then choose the nearest target within that class. Infantry still choose the nearest eligible target.

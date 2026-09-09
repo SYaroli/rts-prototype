@@ -1,6 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id), canvas=$('field'),ctx=canvas.getContext('2d');
-const BUILD='02 · TARGETING + COLLISION';
+const BUILD='03 · OUTPOST SIGHT';
+const OUTPOST={x:10,z:25,sight:12};
 const NX=64,NZ=48, terrain=[],keys=new Set();let W=0,H=0,scale=18,zoom=1,pan={x:0,y:0},units=[],effects=[],selected=new Set(),mode='prep',paused=false,time=0,kills=0,baseHP=1600,spawnIndex=0,spawnClock=0,layout='choke',snapshot=null,idNext=0,pointer=null,mouse={x:-100,y:-100},toastUntil=0;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 function height(x,z){if(x<0||z<0||x>=NX||z>=NZ)return 10;if(x>=33&&x<37&&(z<21||z>=27&&z<38))return 7+Math.sin(z*.7)*.35;if(x>=20&&x<30&&z>=10&&z<25)return z<20?3:(25-z)*.6;return 0;}
@@ -109,7 +110,7 @@ function moveUnit(u,dt){
   }
 }
 function range(u){return(u.type==='tank'?(u.sieged?16:6):u.type==='crawler'?6:5.5)+(hAt(u.x,u.z)>=2?2:0);}
-function spotted(u){return !u.team||units.some(a=>!a.team&&a.hp>0&&distance(a,u)<(a.type==='infantry'?12:10)+(hAt(a.x,a.z)>=2?2:0)&&lineOfSight(a,u));}
+function spotted(u){return !u.team||(baseHP>0&&distance(OUTPOST,u)<=OUTPOST.sight&&lineOfSight(OUTPOST,u))||units.some(a=>!a.team&&a.hp>0&&distance(a,u)<(a.type==='infantry'?12:10)+(hAt(a.x,a.z)>=2?2:0)&&lineOfSight(a,u));}
 function validShot(a,b){let d=distance(a,b);return d<=range(a)&&(!(a.type==='tank'&&a.sieged)||d>=4)&&lineOfSight(a,b,a.sieged)&&(!b.team||spotted(b));}
 function fire(u,t){u.angle=Math.atan2(t.z-u.z,t.x-u.x);u.cool=u.type==='tank'?(u.sieged?3.5:1.25):u.type==='crawler'?1.3:.65;const damage=u.type==='tank'?(u.sieged?102:31):u.type==='crawler'?23:11;if(u.sieged){effects.push({kind:'shell',x:u.x,z:u.z,tx:t.x,tz:t.z,life:.65,max:.65,team:u.team,damage});}else{effects.push({kind:'shot',x:u.x,z:u.z,tx:t.x,tz:t.z,life:.13,max:.13,team:u.team});t.hp-=damage;}}
 function step(dt){
