@@ -28,9 +28,9 @@ From the repository directory, run `python3 -m http.server 8000 --directory publ
 ## Controls
 
 - Left-click or drag: select units; Shift adds to selection.
-- Right-click terrain: move selected mobile units.
+- Right-click terrain: move selected mobile units; right-click a visible enemy: manually target it.
 - E: deploy or pack selected siege tanks (two seconds).
-- A: select all friendly units; S: stop selected units.
+- A: select all friendly units; S: stop selected units and clear manual targeting.
 - Mouse wheel / + / −: zoom; arrow keys / screen edges: pan; middle-drag: pan.
 - Enter: launch attack; Space: pause; Reset: restore launch positions.
 - On touchscreens: select units, then tap terrain to move.
@@ -41,12 +41,16 @@ Choose open ground, canyon mouth, or ridge + screen before launch. The flank tog
 
 Plain HTML, CSS, and JavaScript with no external runtime dependencies. Canvas draws a fixed angled projection of a heightmap with modeled elevation, movement limits, and line-of-sight checks; this is a software-rendered prototype, not a full 3D engine. Infantry squads count as one mechanical unit. Tanks gain range and splash damage in siege mode, lose movement, and have a minimum firing range.
 
-The migration preserves the first playable version. Simulation checks covered ramp access, cliff blocking, siege deployment, minimum firing range, and completion of the scenario variants. Browser visual QA and gameplay balance remain to be evaluated. Results exist only during the current browser session and are not uploaded or automatically visible to the assistant.
+## Build 02 — targeting and collision
 
-## Agreed next work
+- Tanks automatically prioritize hittable enemy armor, then choose the nearest target within that class. Infantry still choose the nearest eligible target.
+- Right-clicking a visible enemy overrides automatic targeting. Mobile units approach it, while deployed tanks hold their ground. A red marker shows the ordered target. Stop or a ground move cancels the order; dead or unseen targets release it automatically.
+- Squads have a 0.45-unit body radius; vehicles have a 0.72-unit radius. Swept movement checks prevent crossing other units or cliffs. Local avoidance and blocked-route recalculation allow passage where space exists. Deployed tanks cannot be pushed.
+- Routes and formation spacing account for those footprints. Enemy crawlers use a canyon exit waypoint with enough clearance from the ridge.
+- The header identifies this version as BUILD 02.
 
-- Prefer enemy armor when tanks acquire a target automatically, with player-selected targets overriding the default.
-- Add unit collision and crowding so a canyon actually constrains throughput; current units can overlap.
-- Retest terrain advantages against repeatable attacks after those mechanics are corrected.
+Run `node tests/combat.cjs` to check armor priority, invalid-target fallback, manual targeting, screen hit testing, mobile pursuit, siege immobility, swept collision, open-ground avoidance, ramp access, and all six defensive-position/attack-route combinations. Scenario checks assert no overlapping units and no unfinished battles after the allotted simulation time. Run `node --check public/game.js` for the deployment syntax check.
 
-Current automatic targeting chooses the nearest eligible enemy. Right-click is currently movement only; target override is not implemented yet. No campaign, economy, persistent bases, or multiplayer is included in this slice.
+These are headless mechanics checks, not browser visual QA. Combat balance still needs human playtesting: high ground or a canyon does not guarantee a win. Results exist only during the current browser session and are not uploaded or automatically visible to the assistant.
+
+No campaign, economy, persistent bases, or multiplayer is included in this slice.
