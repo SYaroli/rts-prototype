@@ -1,6 +1,6 @@
 'use strict';
 const $=id=>document.getElementById(id), canvas=$('field'),ctx=canvas.getContext('2d');
-const BUILD='05 · MARS TERRAIN PASS';
+const BUILD='06 · INDUSTRIAL ART PASS';
 const RESPONSE_LEASH=2;
 const OUTPOST={x:10,z:25,sight:12};
 const NX=64,NZ=48, terrain=[],keys=new Set();let W=0,H=0,scale=18,zoom=1,pan={x:0,y:0},units=[],effects=[],selected=new Set(),mode='prep',paused=false,time=0,kills=0,baseHP=1600,spawnIndex=0,spawnClock=0,layout='choke',snapshot=null,idNext=0,pointer=null,mouse={x:-100,y:-100},toastUntil=0;
@@ -245,10 +245,48 @@ if(sel||u.hp<u.max){ctx.fillStyle='#102024';ctx.fillRect(p.x-13*zoom,p.y-24*zoom
 function label(x,z,text,color='#d9bda2'){let p=project(x,z);ctx.font=`${Math.max(10,12*zoom)}px Arial`;ctx.textAlign='center';ctx.fillStyle='#1b1715cc';ctx.fillRect(p.x-ctx.measureText(text).width/2-7,p.y-12,ctx.measureText(text).width+14,18);ctx.fillStyle=color;ctx.fillText(text,p.x,p.y);}
 function crystal(x,z,h=2.3){
   const y=hAt(x,z),base=project(x,z,y),tip=project(x-.08,z-.04,y+h);
-  const l=project(x-.35,z+.18,y+.12),r=project(x+.32,z-.16,y+.12);
-  polygon([l,r,tip],'#8b6fa1','#c6a7df88');
-  ctx.fillStyle='#d7c1e8';ctx.globalAlpha=.55;ctx.beginPath();ctx.arc(base.x,base.y,5*zoom,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  const l=project(x-.35,z+.18,y+.12),r=project(x+.32,z-.16,y+.12),m=project(x+.06,z+.05,y+h*.62);
+  ctx.save();ctx.shadowColor='#b66cff';ctx.shadowBlur=14*zoom;
+  polygon([l,r,tip],'#7c5798','#e5c8ffcc');polygon([l,m,tip],'#b58ad0aa');ctx.restore();
+  ctx.fillStyle='#e5c8ff';ctx.globalAlpha=.5;ctx.beginPath();ctx.arc(base.x,base.y,7*zoom,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
 }
+const seeded=(x,z,n=0)=>{let v=Math.sin(x*12.9898+z*78.233+n*37.719)*43758.5453;return v-Math.floor(v);};
+function terrainDetail(x,z,h,kind,p){
+  const cx=(p[0].x+p[2].x)/2,cy=(p[0].y+p[2].y)/2,q=zoom;
+  if(kind==='dust'||kind==='high'||kind==='crater'){
+    const n=seeded(x,z);
+    if(n>.28){ctx.fillStyle=kind==='high'?'#5d392c88':'#3f271f77';ctx.beginPath();ctx.ellipse(cx+(n-.5)*10*q,cy+(seeded(x,z,1)-.5)*5*q,(1.1+n*1.6)*q,(.6+n)*q,-.2,0,Math.PI*2);ctx.fill();}
+    if(seeded(x,z,2)>.74){line({x:p[0].x+4*q,y:p[0].y+2*q},{x:p[2].x-5*q,y:p[2].y-2*q},'#e0926440',.8);}
+  }
+  if(kind==='industrial'){
+    line({x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2},{x:(p[3].x+p[2].x)/2,y:(p[3].y+p[2].y)/2},'#161b1c44',1);
+    line({x:(p[0].x+p[3].x)/2,y:(p[0].y+p[3].y)/2},{x:(p[1].x+p[2].x)/2,y:(p[1].y+p[2].y)/2},'#c9aa7740',.8);
+    if((x+2*z)%11===0){for(let i=0;i<3;i++){let a=i/3;line({x:p[0].x+(p[1].x-p[0].x)*(.1+a*.17),y:p[0].y+(p[1].y-p[0].y)*(.1+a*.17)},{x:p[3].x+(p[2].x-p[3].x)*(.1+a*.17),y:p[3].y+(p[2].y-p[3].y)*(.1+a*.17)},'#d39a3e99',1.2);}}
+  }
+  if(kind==='water'){
+    const wob=Math.sin(time*1.7+x*.8+z*.35)*2*q;
+    line({x:p[0].x+3*q,y:p[0].y+4*q+wob},{x:p[2].x-5*q,y:p[2].y-3*q+wob},'#a4e0df55',1);
+    if((x+z)%3===0)line({x:p[3].x+2*q,y:p[3].y-1*q},{x:p[1].x-2*q,y:p[1].y+1*q},'#1f666d99',1.2);
+  }
+  if(kind==='terra'){
+    for(let i=0;i<2;i++){let rx=(seeded(x,z,i+6)-.5)*12*q,ry=(seeded(x,z,i+8)-.5)*6*q;ctx.fillStyle=i?'#6f7e3f99':'#8c8c4d77';ctx.beginPath();ctx.ellipse(cx+rx,cy+ry,(2+seeded(x,z,i+10)*3)*q,(1+seeded(x,z,i+12)*2)*q,.2,0,Math.PI*2);ctx.fill();}
+  }
+}
+function pipeRun(x,z,len=5){
+  const y=hAt(x,z)+.55;for(const off of [-.28,.28]){let a=project(x-len/2,z+off,y),b=project(x+len/2,z+off,y);line(a,b,'#6b4a35',7*zoom);line(a,b,'#c37f46',3*zoom);}
+  for(let i=-2;i<=2;i++){let a=project(x+i*len/5,z-.55,hAt(x,z)),b=project(x+i*len/5,z+.55,hAt(x,z));line(a,b,'#d6a252',2*zoom);}
+}
+function storageTank(x,z){
+  const y=hAt(x,z);box(x,z,2.1,2.1,2.6,{top:'#8d8271',side:'#585b57',dark:'#393f3e'},y);
+  let p=project(x,z,y+2.75);ctx.strokeStyle='#d0a34a';ctx.lineWidth=2*zoom;ctx.beginPath();ctx.ellipse(p.x,p.y,13*zoom,5*zoom,0,0,Math.PI*2);ctx.stroke();
+  line(project(x+.85,z,y+2.6),project(x+.85,z,y+3.7),'#d0a34a',2*zoom);
+}
+function antenna(x,z){
+  const y=hAt(x,z);box(x,z,1.4,1.4,1,{top:'#77766c',side:'#4b5855',dark:'#35413f'},y);
+  line(project(x,z,y+1),project(x,z,y+4),'#c4b79e',2*zoom);let p=project(x,z,y+4);ctx.fillStyle='#ef6d5c';ctx.beginPath();ctx.arc(p.x,p.y,2.5*zoom,0,Math.PI*2);ctx.fill();
+}
+function barrier(x,z){box(x,z,2.4,.55,.55,{top:'#9a8e78',side:'#66594d',dark:'#463b34'});let a=project(x-1,z-.29,hAt(x,z)+.58),b=project(x+1,z-.29,hAt(x,z)+.58);line(a,b,'#e0a53f',2*zoom);}
+
 function render(){ctx.fillStyle='#251c18';ctx.fillRect(0,0,W,H);for(let t of terrain){const{x,z,h,shade}=t,p=[project(x,z,h),project(x+1,z,h),project(x+1,z+1,h),project(x,z+1,h)];if(p[2].x<-50||p[0].x>W+70||p[2].y<-50||p[0].y>H+100)continue;const kind=terrainType(x+.5,z+.5);let c;
 if(kind==='water')c=[39,93,98];
 else if(kind==='industrial')c=[91,81,72];
@@ -262,14 +300,22 @@ polygon(p,`rgb(${Math.round(c[0]+grain)},${Math.round(c[1]+grain)},${Math.round(
 if(kind==='industrial'&&((x+z)%4===0)){line(p[0],p[1],'#d5a25b22');line(p[0],p[3],'#1b171522');}
 if(kind==='water'&&z%3===0)line(p[3],p[2],'#8fc9ca30');
 if(kind==='terra'&&(x*7+z*5)%9<2){ctx.fillStyle='#70824b55';ctx.beginPath();ctx.arc((p[0].x+p[2].x)/2,(p[0].y+p[2].y)/2,Math.max(1,2.2*zoom),0,Math.PI*2);ctx.fill();}
-let zh=z<NZ-1?hAt(x,z+1):0,xh=x<NX-1?hAt(x+1,z):0;if(h>zh)polygon([p[3],p[2],project(x+1,z+1,zh),project(x,z+1,zh)],'#4c3429');if(h>xh)polygon([p[1],p[2],project(x+1,z+1,xh),project(x+1,z,xh)],'#654633');}
-// Terrain landmarks: crater rings, reservoir bridge, terraforming pocket and Aetherite growth.
-for(const r of [3.1,5.1,6.8])ring(31,40,r,'#4f2e2570',true);
-box(49,24.5,10,4.4,.25,{top:'#807469',side:'#4d4640',dark:'#38322f'});
-for(const z of [17,32.5]){box(48.2,z,2.5,1.5,1.2,{top:'#77766c',side:'#4b5855',dark:'#35413f'});box(51,z,2,1.6,1.6,{top:'#8a8173',side:'#53605d',dark:'#384541'});}
-ring(58,13,4.2,'#92a76066');for(const c of [[56.3,10.7,2.5],[58,11.4,3.1],[59.5,9.8,2.2],[60.3,13.2,2.7],[57,14.4,1.9]])crystal(c[0],c[1],c[2]);
-// Functional world geometry: outpost, barricades and the ridge access ramp.
-box(9,25,3,3,1.8,{top:'#939184',side:'#5b6664',dark:'#394b4f'});box(9,25,1.6,2,1,{top:'#b4ad98',side:'#76807a',dark:'#435958'},1.8);box(6.5,24,1,1.6,2.3,{top:'#a5997d',side:'#5b6664',dark:'#394b4f'});line(project(9,25,2.8),project(9,25,5),'#c7b99f',2);ctx.fillStyle='#81e6e3';let beacon=project(9,25,5);ctx.fillRect(beacon.x-2,beacon.y-2,4,4);
+terrainDetail(x,z,h,kind,p);
+let zh=z<NZ-1?hAt(x,z+1):0,xh=x<NX-1?hAt(x+1,z):0;if(h>zh){const b1=project(x,z+1,zh),b2=project(x+1,z+1,zh);polygon([p[3],p[2],b2,b1],'#4c3429');for(let i=.18;i<1;i+=.2)line({x:p[3].x+(p[2].x-p[3].x)*i,y:p[3].y+(p[2].y-p[3].y)*i},{x:b1.x+(b2.x-b1.x)*i,y:b1.y+(b2.y-b1.y)*i},'#ba70452f',.8);}if(h>xh){const b1=project(x+1,z,xh),b2=project(x+1,z+1,xh);polygon([p[1],p[2],b2,b1],'#654633');for(let i=.18;i<1;i+=.2)line({x:p[1].x+(p[2].x-p[1].x)*i,y:p[1].y+(p[2].y-p[1].y)*i},{x:b1.x+(b2.x-b1.x)*i,y:b1.y+(b2.y-b1.y)*i},'#d0834c25',.8);}}
+// Terrain landmarks and environment dressing.
+for(const r of [3.1,5.1,6.8])ring(31,40,r,'#4f2e2544',true);
+box(49,24.5,10,4.4,.34,{top:'#6f6860',side:'#48443f',dark:'#312e2b'});
+for(let i=0;i<6;i++){let x=44.5+i*1.75;barrier(x,22.2);barrier(x,27.2);}
+for(const z of [17,32.5]){storageTank(48.2,z);storageTank(51,z+.5);}
+pipeRun(20,31,7);pipeRun(36,19,6);pipeRun(41,31,5);
+for(const p of [[18,22],[22,20],[34,31],[39,22]])barrier(p[0],p[1]);
+antenna(7,22);antenna(42,18);
+ring(58,13,4.2,'#92a76044');for(const c of [[56.3,10.7,2.5],[58,11.4,3.1],[59.5,9.8,2.2],[60.3,13.2,2.7],[57,14.4,1.9],[61.1,11.5,1.7]])crystal(c[0],c[1],c[2]);
+// Terran Accord outpost: modular industrial structure, antenna and power spine.
+box(9,25,3.8,3.4,1.35,{top:'#77796f',side:'#485653',dark:'#2f3d3e'});box(9,25,2.2,2.2,1.05,{top:'#a49d89',side:'#65716d',dark:'#405354'},1.35);
+box(7.1,24.2,1.1,1.6,2.1,{top:'#8d856e',side:'#58625e',dark:'#374847'});box(11,26.2,1.4,1.1,.85,{top:'#726d61',side:'#4c5451',dark:'#333e3d'});
+line(project(9,25,2.4),project(9,25,5.1),'#d1c2a2',2*zoom);line(project(8.7,25,3.8),project(9.3,25,3.8),'#d59d48',2*zoom);
+ctx.fillStyle='#81e6e3';let beacon=project(9,25,5.1);ctx.shadowColor='#81e6e3';ctx.shadowBlur=8*zoom;ctx.fillRect(beacon.x-2,beacon.y-2,4,4);ctx.shadowBlur=0;
 for(let u of units)if(selected.has(u.id)){const marked=units.find(v=>v.id===u.manualTarget&&v.hp>0&&spotted(v));if(marked){ring(marked.x,marked.z,1.05,'#ff866a',true);line(project(u.x,u.z),project(marked.x,marked.z),'#ff866a55');}ring(u.x,u.z,range(u),'#83dadd55');if(u.sieged)ring(u.x,u.z,4,'#edc08499',true);if(u.path.length){ctx.setLineDash([3,5]);let pp=project(u.x,u.z);for(let t of u.path){let np=project(t.x,t.z);line(pp,np,'#a7dedb66');pp=np;}ctx.setLineDash([]);}}
 units.slice().sort((a,b)=>project(a.x,a.z).y-project(b.x,b.z).y).forEach(u=>{if(!u.team||spotted(u))drawUnit(u);});for(let e of effects){if(e.kind==='shot'){line(project(e.x,e.z,hAt(e.x,e.z)+.7),project(e.tx,e.tz,hAt(e.tx,e.tz)+.6),e.team?'#ff9e60':'#ddf9cf',1.6);}else if(e.kind==='shell'){let t=1-e.life/e.max,x=e.x+(e.tx-e.x)*t,z=e.z+(e.tz-e.z)*t,p=project(x,z,hAt(e.x,e.z)*(1-t)+hAt(e.tx,e.tz)*t+Math.sin(t*Math.PI)*7+.8);ctx.fillStyle='#ffdf99';ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();}else if(e.kind==='blast'){let p=project(e.x,e.z),r=(1-e.life/e.max)*scale*zoom*2.5;ctx.globalAlpha=e.life/e.max;ctx.fillStyle='#f4bd77';ctx.beginPath();ctx.ellipse(p.x,p.y,r,r*.65,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}else ring(e.x,e.z,(1-e.life)*1.5+.2,'#9effe0');}
 label(9,29,'ACCORD BASE PLATEAU','#acd9d6');label(24,12,'CANYON HIGH GROUND');label(25,26.5,'RIDGE RAMP');label(31,30,'INDUSTRIAL MIDLINE');label(49,29,'RESERVOIR CHOKE','#9bcfd0');label(31,44,'CRATER FLANK');label(58,8.5,'AETHERITE ZONE','#d2a8e5');label(57,21,'FOUNDRY APPROACH','#f4a574');if(pointer&&pointer.button===0&&Math.hypot(mouse.x-pointer.x,mouse.y-pointer.y)>5){ctx.fillStyle='#8ee9ed18';ctx.strokeStyle='#a6edef';ctx.fillRect(pointer.x,pointer.y,mouse.x-pointer.x,mouse.y-pointer.y);ctx.strokeRect(pointer.x,pointer.y,mouse.x-pointer.x,mouse.y-pointer.y);}}
