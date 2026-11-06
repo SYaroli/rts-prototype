@@ -1,11 +1,11 @@
 'use strict';
 const $=id=>document.getElementById(id), canvas=$('field'),ctx=canvas.getContext('2d');
-const BUILD='06 · INDUSTRIAL ART PASS';
+const BUILD='07 · TERRAIN REWORK';
 const RESPONSE_LEASH=2;
 const OUTPOST={x:10,z:25,sight:12};
 const NX=64,NZ=48, terrain=[],keys=new Set();let W=0,H=0,scale=18,zoom=1,pan={x:0,y:0},units=[],effects=[],selected=new Set(),mode='prep',paused=false,time=0,kills=0,baseHP=1600,spawnIndex=0,spawnClock=0,layout='choke',snapshot=null,idNext=0,pointer=null,mouse={x:-100,y:-100},toastUntil=0;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
-function height(x,z){if(x<0||z<0||x>=NX||z>=NZ)return 10;if(x>=33&&x<37&&(z<21||z>=27&&z<38))return 7+Math.sin(z*.7)*.35;if(x>=20&&x<30&&z>=10&&z<25)return z<20?3:(25-z)*.6;return 0;}
+function height(x,z){if(x<0||z<0||x>=NX||z>=NZ)return 10;if(x>=33&&x<36&&(z<19||z>=29&&z<38))return 4.2+Math.sin(z*.7)*.3;if(x>=20&&x<30&&z>=10&&z<25)return z<20?2.7:(25-z)*.54;return 0;}
 for(let z=0;z<NZ;z++)for(let x=0;x<NX;x++)terrain.push({x,z,h:height(x+.5,z+.5),shade:((x*37+z*71+x*z*13)%19)-9});
 const hAt=(x,z)=>height(Math.floor(x)+.5,Math.floor(z)+.5);
 function terrainType(x,z){
@@ -287,38 +287,81 @@ function antenna(x,z){
 }
 function barrier(x,z){box(x,z,2.4,.55,.55,{top:'#9a8e78',side:'#66594d',dark:'#463b34'});let a=project(x-1,z-.29,hAt(x,z)+.58),b=project(x+1,z-.29,hAt(x,z)+.58);line(a,b,'#e0a53f',2*zoom);}
 
-function render(){ctx.fillStyle='#251c18';ctx.fillRect(0,0,W,H);for(let t of terrain){const{x,z,h,shade}=t,p=[project(x,z,h),project(x+1,z,h),project(x+1,z+1,h),project(x,z+1,h)];if(p[2].x<-50||p[0].x>W+70||p[2].y<-50||p[0].y>H+100)continue;const kind=terrainType(x+.5,z+.5);let c;
-if(kind==='water')c=[39,93,98];
-else if(kind==='industrial')c=[91,81,72];
-else if(kind==='terra')c=[91,103,62];
-else if(kind==='crater')c=[91,53,39];
-else if(kind==='high')c=[142,96,62];
-else if(kind==='cliff')c=[79,55,43];
-else c=[122,72,48];
-const grain=kind==='water'?shade*.35:shade*.75;
-polygon(p,`rgb(${Math.round(c[0]+grain)},${Math.round(c[1]+grain)},${Math.round(c[2]+grain)})`);
-if(kind==='industrial'&&((x+z)%4===0)){line(p[0],p[1],'#d5a25b22');line(p[0],p[3],'#1b171522');}
-if(kind==='water'&&z%3===0)line(p[3],p[2],'#8fc9ca30');
-if(kind==='terra'&&(x*7+z*5)%9<2){ctx.fillStyle='#70824b55';ctx.beginPath();ctx.arc((p[0].x+p[2].x)/2,(p[0].y+p[2].y)/2,Math.max(1,2.2*zoom),0,Math.PI*2);ctx.fill();}
-terrainDetail(x,z,h,kind,p);
-let zh=z<NZ-1?hAt(x,z+1):0,xh=x<NX-1?hAt(x+1,z):0;if(h>zh){const b1=project(x,z+1,zh),b2=project(x+1,z+1,zh);polygon([p[3],p[2],b2,b1],'#4c3429');for(let i=.18;i<1;i+=.2)line({x:p[3].x+(p[2].x-p[3].x)*i,y:p[3].y+(p[2].y-p[3].y)*i},{x:b1.x+(b2.x-b1.x)*i,y:b1.y+(b2.y-b1.y)*i},'#ba70452f',.8);}if(h>xh){const b1=project(x+1,z,xh),b2=project(x+1,z+1,xh);polygon([p[1],p[2],b2,b1],'#654633');for(let i=.18;i<1;i+=.2)line({x:p[1].x+(p[2].x-p[1].x)*i,y:p[1].y+(p[2].y-p[1].y)*i},{x:b1.x+(b2.x-b1.x)*i,y:b1.y+(b2.y-b1.y)*i},'#d0834c25',.8);}}
-// Terrain landmarks and environment dressing.
-for(const r of [3.1,5.1,6.8])ring(31,40,r,'#4f2e2544',true);
-box(49,24.5,10,4.4,.34,{top:'#6f6860',side:'#48443f',dark:'#312e2b'});
-for(let i=0;i<6;i++){let x=44.5+i*1.75;barrier(x,22.2);barrier(x,27.2);}
-for(const z of [17,32.5]){storageTank(48.2,z);storageTank(51,z+.5);}
-pipeRun(20,31,7);pipeRun(36,19,6);pipeRun(41,31,5);
-for(const p of [[18,22],[22,20],[34,31],[39,22]])barrier(p[0],p[1]);
-antenna(7,22);antenna(42,18);
-ring(58,13,4.2,'#92a76044');for(const c of [[56.3,10.7,2.5],[58,11.4,3.1],[59.5,9.8,2.2],[60.3,13.2,2.7],[57,14.4,1.9],[61.1,11.5,1.7]])crystal(c[0],c[1],c[2]);
-// Terran Accord outpost: modular industrial structure, antenna and power spine.
-box(9,25,3.8,3.4,1.35,{top:'#77796f',side:'#485653',dark:'#2f3d3e'});box(9,25,2.2,2.2,1.05,{top:'#a49d89',side:'#65716d',dark:'#405354'},1.35);
-box(7.1,24.2,1.1,1.6,2.1,{top:'#8d856e',side:'#58625e',dark:'#374847'});box(11,26.2,1.4,1.1,.85,{top:'#726d61',side:'#4c5451',dark:'#333e3d'});
-line(project(9,25,2.4),project(9,25,5.1),'#d1c2a2',2*zoom);line(project(8.7,25,3.8),project(9.3,25,3.8),'#d59d48',2*zoom);
-ctx.fillStyle='#81e6e3';let beacon=project(9,25,5.1);ctx.shadowColor='#81e6e3';ctx.shadowBlur=8*zoom;ctx.fillRect(beacon.x-2,beacon.y-2,4,4);ctx.shadowBlur=0;
-for(let u of units)if(selected.has(u.id)){const marked=units.find(v=>v.id===u.manualTarget&&v.hp>0&&spotted(v));if(marked){ring(marked.x,marked.z,1.05,'#ff866a',true);line(project(u.x,u.z),project(marked.x,marked.z),'#ff866a55');}ring(u.x,u.z,range(u),'#83dadd55');if(u.sieged)ring(u.x,u.z,4,'#edc08499',true);if(u.path.length){ctx.setLineDash([3,5]);let pp=project(u.x,u.z);for(let t of u.path){let np=project(t.x,t.z);line(pp,np,'#a7dedb66');pp=np;}ctx.setLineDash([]);}}
-units.slice().sort((a,b)=>project(a.x,a.z).y-project(b.x,b.z).y).forEach(u=>{if(!u.team||spotted(u))drawUnit(u);});for(let e of effects){if(e.kind==='shot'){line(project(e.x,e.z,hAt(e.x,e.z)+.7),project(e.tx,e.tz,hAt(e.tx,e.tz)+.6),e.team?'#ff9e60':'#ddf9cf',1.6);}else if(e.kind==='shell'){let t=1-e.life/e.max,x=e.x+(e.tx-e.x)*t,z=e.z+(e.tz-e.z)*t,p=project(x,z,hAt(e.x,e.z)*(1-t)+hAt(e.tx,e.tz)*t+Math.sin(t*Math.PI)*7+.8);ctx.fillStyle='#ffdf99';ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();}else if(e.kind==='blast'){let p=project(e.x,e.z),r=(1-e.life/e.max)*scale*zoom*2.5;ctx.globalAlpha=e.life/e.max;ctx.fillStyle='#f4bd77';ctx.beginPath();ctx.ellipse(p.x,p.y,r,r*.65,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}else ring(e.x,e.z,(1-e.life)*1.5+.2,'#9effe0');}
-label(9,29,'ACCORD BASE PLATEAU','#acd9d6');label(24,12,'CANYON HIGH GROUND');label(25,26.5,'RIDGE RAMP');label(31,30,'INDUSTRIAL MIDLINE');label(49,29,'RESERVOIR CHOKE','#9bcfd0');label(31,44,'CRATER FLANK');label(58,8.5,'AETHERITE ZONE','#d2a8e5');label(57,21,'FOUNDRY APPROACH','#f4a574');if(pointer&&pointer.button===0&&Math.hypot(mouse.x-pointer.x,mouse.y-pointer.y)>5){ctx.fillStyle='#8ee9ed18';ctx.strokeStyle='#a6edef';ctx.fillRect(pointer.x,pointer.y,mouse.x-pointer.x,mouse.y-pointer.y);ctx.strokeRect(pointer.x,pointer.y,mouse.x-pointer.x,mouse.y-pointer.y);}}
+function surfaceRect(x1,z1,x2,z2,color,y=0,stroke=null){
+  polygon([project(x1,z1,y),project(x2,z1,y),project(x2,z2,y),project(x1,z2,y)],color,stroke);
+}
+function mapPoly(cx,cz,r,y,color){
+  const pts=[];for(let i=0;i<64;i++){const a=i/64*Math.PI*2;pts.push(project(cx+Math.cos(a)*r,cz+Math.sin(a)*r,y));}polygon(pts,color);
+}
+function rock(x,z,s=.45){
+  const y=hAt(x,z),p=project(x,z,y),p1=project(x-s,z+.15*s,y),p2=project(x+.15*s,z-s,y),p3=project(x+s,z+.2*s,y),top=project(x,z,y+s*.65);
+  polygon([p1,p2,top],'#9a5c3d');polygon([p2,p3,top],'#6a4030');polygon([p3,p1,top],'#7c4935');
+}
+function render(){
+  ctx.fillStyle='#1e1714';ctx.fillRect(0,0,W,H);
+  // One continuous Martian ground plane. The simulation remains tile based underneath.
+  surfaceRect(0,0,NX,NZ,'#7c432f');
+  surfaceRect(12,18,44,34,'#5c5952');
+  surfaceRect(44,16,54,35,'#245e67');
+  surfaceRect(53,7,63,18,'#58633b');
+  mapPoly(31,40,7.4,0,'#623526');
+  mapPoly(31,40,5.7,.03,'#70402d');
+  mapPoly(31,40,3.8,.05,'#512b23');
+
+  // Broad surface texture instead of a visible checkerboard.
+  for(let i=0;i<150;i++){
+    const x=1+seeded(i,17)*62,z=1+seeded(i,31)*46,k=terrainType(x,z);
+    if(k==='water'||k==='industrial'||k==='terra')continue;
+    const p=project(x,z),r=(.45+seeded(i,53)*1.2)*zoom;
+    ctx.fillStyle=seeded(i,71)>.5?'#a55d3a55':'#43281f66';
+    ctx.beginPath();ctx.ellipse(p.x,p.y,r*2.1,r,seeded(i,11)*.8,0,Math.PI*2);ctx.fill();
+  }
+  // Industrial slab seams, faded lane paint and scars.
+  for(let x=14;x<44;x+=4){line(project(x,18,.03),project(x,34,.03),'#252a2b99',1);if(x%8===2)line(project(x+.5,21,.05),project(x+.5,31,.05),'#d49a4266',2*zoom);}
+  for(let z=20;z<34;z+=4)line(project(12,z,.03),project(44,z,.03),'#aaa08a28',1);
+  for(let i=0;i<18;i++){const x=14+seeded(i,91)*28,z=19+seeded(i,92)*14,p=project(x,z,.05);ctx.fillStyle='#171b1c55';ctx.beginPath();ctx.ellipse(p.x,p.y,(3+seeded(i,93)*8)*zoom,(1+seeded(i,94)*3)*zoom,.2,0,Math.PI*2);ctx.fill();}
+
+  // Reservoir motion and hard concrete banks.
+  for(let z=17;z<35;z+=1.6){const a=project(44.3,z,.05),b=project(53.7,z,.05),w=Math.sin(time*1.8+z)*2*zoom;line({x:a.x,y:a.y+w},{x:b.x,y:b.y+w},'#8fd2d35d',1);}
+  line(project(44,16,.05),project(54,16,.05),'#9d9788',3*zoom);line(project(44,35,.05),project(54,35,.05),'#4c4a45',3*zoom);
+
+  // Terraform pocket: sparse, ugly and valuable rather than lush Earth grass.
+  for(let i=0;i<45;i++){const x=53.4+seeded(i,121)*9.2,z=7.5+seeded(i,122)*9.5,p=project(x,z,.05);ctx.fillStyle=seeded(i,123)>.55?'#81904e88':'#394b2f99';ctx.beginPath();ctx.ellipse(p.x,p.y,(1+seeded(i,124)*3)*zoom,(.6+seeded(i,125)*1.8)*zoom,.3,0,Math.PI*2);ctx.fill();}
+
+  // Elevated terrain only: keep height geometry, ditch the tiled floor look.
+  for(let t of terrain){const{x,z,h}=t;if(h<=.05)continue;const p=[project(x,z,h),project(x+1,z,h),project(x+1,z+1,h),project(x,z+1,h)];let top=h>3.5?'#714a36':'#9a6c48';polygon(p,top);let zh=z<NZ-1?hAt(x,z+1):0,xh=x<NX-1?hAt(x+1,z):0;if(h>zh+.15)polygon([p[3],p[2],project(x+1,z+1,zh),project(x,z+1,zh)],'#4b3026');if(h>xh+.15)polygon([p[1],p[2],project(x+1,z+1,xh),project(x+1,z,xh)],'#5a3929');}
+  // Roughen cliff faces with vertical mineral bands.
+  for(let z of [4,8,12,16,31,35]){let a=project(33.2,z,4),b=project(33.2,z+2,0);line(a,b,'#c47a4a44',2*zoom);}
+  for(let i=0;i<34;i++){const x=2+seeded(i,201)*58,z=2+seeded(i,202)*42;if(terrainType(x,z)==='dust')rock(x,z,.25+seeded(i,203)*.5);}
+
+  // Functional landmarks, now drawn as believable infrastructure clusters.
+  for(const r of [3.4,5.3,7.1])ring(31,40,r,'#3f211d55',r===5.3);
+  box(49,24.5,10,4.4,.4,{top:'#69655e',side:'#403c38',dark:'#292725'});
+  for(let x=45;x<54;x+=1.5){line(project(x,22.25,.5),project(x,22.25,1.15),'#d7a34b',1.5*zoom);line(project(x,26.8,.5),project(x,26.8,1.15),'#d7a34b',1.5*zoom);}
+  storageTank(48.1,17.6);storageTank(51.1,18.2);storageTank(48.2,32.4);storageTank(51.2,31.9);
+  pipeRun(19,31,6.5);pipeRun(37,20,5.5);pipeRun(39,31,4.8);
+  for(const p of [[17,22],[22,20],[34,31],[39,22],[15,30]])barrier(p[0],p[1]);
+  antenna(7,22);antenna(42,18);
+  box(26,23,6.5,3.2,.22,{top:'#777067',side:'#443e39',dark:'#2f2926'});
+  for(let i=0;i<7;i++)line(project(23+i*.95,21.7,.3),project(23+i*.95,22.25,.3),'#d69e44',2*zoom);
+
+  // Aetherite is the only deliberately unnatural color on the map.
+  ctx.save();ctx.globalCompositeOperation='screen';ring(58,13,4.4,'#9b68c477');ctx.restore();
+  for(const c of [[56.3,10.7,2.5],[58,11.4,3.1],[59.5,9.8,2.2],[60.3,13.2,2.7],[57,14.4,1.9],[61.1,11.5,1.7]])crystal(c[0],c[1],c[2]);
+
+  // Terran Accord outpost.
+  box(9,25,3.8,3.4,1.35,{top:'#77796f',side:'#485653',dark:'#2f3d3e'});box(9,25,2.2,2.2,1.05,{top:'#a49d89',side:'#65716d',dark:'#405354'},1.35);
+  box(7.1,24.2,1.1,1.6,2.1,{top:'#8d856e',side:'#58625e',dark:'#374847'});box(11,26.2,1.4,1.1,.85,{top:'#726d61',side:'#4c5451',dark:'#333e3d'});
+  line(project(9,25,2.4),project(9,25,5.1),'#d1c2a2',2*zoom);line(project(8.7,25,3.8),project(9.3,25,3.8),'#d59d48',2*zoom);
+  ctx.fillStyle='#81e6e3';let beacon=project(9,25,5.1);ctx.shadowColor='#81e6e3';ctx.shadowBlur=8*zoom;ctx.fillRect(beacon.x-2,beacon.y-2,4,4);ctx.shadowBlur=0;
+
+  // Selection, units, combat effects.
+  for(let u of units)if(selected.has(u.id)){const marked=units.find(v=>v.id===u.manualTarget&&v.hp>0&&spotted(v));if(marked){ring(marked.x,marked.z,1.05,'#ff866a',true);line(project(u.x,u.z),project(marked.x,marked.z),'#ff866a55');}ring(u.x,u.z,range(u),'#83dadd55');if(u.sieged)ring(u.x,u.z,4,'#edc08499',true);if(u.path.length){ctx.setLineDash([3,5]);let pp=project(u.x,u.z);for(let t of u.path){let np=project(t.x,t.z);line(pp,np,'#a7dedb66');pp=np;}ctx.setLineDash([]);}}
+  units.slice().sort((a,b)=>project(a.x,a.z).y-project(b.x,b.z).y).forEach(u=>{if(!u.team||spotted(u))drawUnit(u);});
+  for(let e of effects){if(e.kind==='shot'){line(project(e.x,e.z,hAt(e.x,e.z)+.7),project(e.tx,e.tz,hAt(e.tx,e.tz)+.6),e.team?'#ff9e60':'#ddf9cf',1.6);}else if(e.kind==='shell'){let t=1-e.life/e.max,x=e.x+(e.tx-e.x)*t,z=e.z+(e.tz-e.z)*t,p=project(x,z,hAt(e.x,e.z)*(1-t)+hAt(e.tx,e.tz)*t+Math.sin(t*Math.PI)*7+.8);ctx.fillStyle='#ffdf99';ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();}else if(e.kind==='blast'){let p=project(e.x,e.z),r=(1-e.life/e.max)*scale*zoom*2.5;ctx.globalAlpha=e.life/e.max;ctx.fillStyle='#f4bd77';ctx.beginPath();ctx.ellipse(p.x,p.y,r,r*.65,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}else ring(e.x,e.z,(1-e.life)*1.5+.2,'#9effe0');}
+  label(9,29,'ACCORD BASE','#acd9d6');label(24,12,'CANYON HIGH GROUND');label(25,26.5,'RIDGE RAMP');label(31,30,'INDUSTRIAL MIDLINE');label(49,29,'RESERVOIR CHOKE','#9bcfd0');label(31,44,'CRATER FLANK');label(58,8.5,'AETHERITE ZONE','#d2a8e5');label(57,21,'FOUNDRY APPROACH','#f4a574');
+  if(pointer&&pointer.button===0&&Math.hypot(mouse.x-pointer.x,mouse.y-pointer.y)>5){ctx.fillStyle='#8ee9ed18';ctx.strokeStyle='#a6edef';ctx.fillRect(pointer.x,pointer.y,mouse.x-pointer.x,mouse.y-pointer.y);ctx.strokeRect(pointer.x,pointer.y,mouse.x-pointer.x,mouse.y-pointer.y);}
+}
 function updateUI(){let group=units.filter(u=>selected.has(u.id)),tanks=group.filter(u=>u.type==='tank');$('phase').textContent=mode==='prep'?'DEPLOYMENT':mode==='ended'?'COMPLETE':paused?'PAUSED':'CONTACT';$('clock').textContent=String(Math.floor(time/60)).padStart(2,'0')+':'+String(Math.floor(time%60)).padStart(2,'0');$('base').textContent=Math.max(0,Math.ceil(baseHP/16))+'%';$('kills').textContent=kills+' / 22';$('losses').textContent=(6-units.filter(u=>!u.team).length)+' / 6';$('selection').textContent=group.length===0?'No units selected':group.length===tanks.length?`${tanks.length} Bastion siege tank${tanks.length>1?'s':''}`:`${group.length} units · ${tanks.length} tanks / ${group.length-tanks.length} squads`;$('detail').textContent=group.length?`${tanks.filter(u=>u.sieged).length} deployed · ${group.filter(u=>hAt(u.x,u.z)>=2).length} on high ground · ${Math.ceil(group.reduce((s,u)=>s+u.hp,0))} HP · ${group.filter(u=>u.manualTarget!==null).length} manual targets`:'Left-click a unit or drag a selection box';const squads=group.filter(u=>u.type==='infantry');$('hold').disabled=!squads.length||mode==='ended';$('hold').textContent=squads.length&&squads.every(u=>u.hold)?'Release hold [H]':'Hold position [H]';$('siege').disabled=!tanks.length||mode==='ended';$('start').disabled=mode!=='prep';$('pause').textContent=paused?'Resume':'Pause';$('flank').disabled=mode!=='prep';document.querySelectorAll('[data-layout]').forEach(b=>{b.disabled=mode!=='prep';b.classList.toggle('active',b.dataset.layout===layout);});}
 function resize(){let rect=canvas.getBoundingClientRect();W=rect.width;H=rect.height;let dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);scale=Math.max(7,Math.min(W/77,H/40));}window.addEventListener('resize',resize);
 canvas.addEventListener('contextmenu',e=>e.preventDefault());canvas.addEventListener('pointerdown',e=>{canvas.focus();let r=canvas.getBoundingClientRect();mouse={x:e.clientX-r.left,y:e.clientY-r.top};pointer={...mouse,button:e.button,shift:e.shiftKey,type:e.pointerType};canvas.setPointerCapture(e.pointerId);if(e.button===2)rightCommand(mouse);});canvas.addEventListener('pointermove',e=>{let r=canvas.getBoundingClientRect(),m={x:e.clientX-r.left,y:e.clientY-r.top};if(pointer?.button===1){pan.x+=m.x-mouse.x;pan.y+=m.y-mouse.y;}mouse=m;});canvas.addEventListener('pointerup',e=>{if(pointer?.button===0){let drag=Math.hypot(mouse.x-pointer.x,mouse.y-pointer.y)>6,hits=[];for(let u of units.filter(u=>!u.team)){let p=project(u.x,u.z);if(drag?p.x>=Math.min(mouse.x,pointer.x)&&p.x<=Math.max(mouse.x,pointer.x)&&p.y>=Math.min(mouse.y,pointer.y)&&p.y<=Math.max(mouse.y,pointer.y):Math.hypot(p.x-mouse.x,p.y-8*zoom-mouse.y)<18*zoom)hits.push(u);}if(!drag)hits=hits.sort((a,b)=>{let pa=project(a.x,a.z),pb=project(b.x,b.z);return Math.hypot(pa.x-mouse.x,pa.y-mouse.y)-Math.hypot(pb.x-mouse.x,pb.y-mouse.y);}).slice(0,1);if(pointer.type==='touch'&&!hits.length&&selected.size)rightCommand(mouse);else{if(!pointer.shift)selected.clear();hits.forEach(u=>selected.add(u.id));}}pointer=null;updateUI();});canvas.addEventListener('pointerleave',()=>{if(!pointer)mouse={x:-100,y:-100};});canvas.addEventListener('pointercancel',()=>pointer=null);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom*(e.deltaY>0?.9:1.1),.6,2.5);},{passive:false});
